@@ -42,11 +42,12 @@
                     isScrollUp = false;
                 }
 
-                // 顶部不能往下拉了
-                if (this.isScrollOver(scrollValue, isScrollUp)) {
-                  return;
+                if (this.isScrollToTop(scrollValue, isScrollUp)) {
+                  scrollValue = 0;
                 }
-
+                if (this.isScrollToBottom(scrollValue, isScrollUp)) {
+                  scrollValue = -this.maxScrollTop;
+                }
                 e.currentTarget.style.transform = `translateY(${scrollValue}px)`;
                 e.currentTarget.style['transition-duration'] = `0s`;
 
@@ -101,20 +102,32 @@
             endSelect (e){
                 e.preventDefault();
 
-                let elHeight = this.$refs.scrollUl.children[0].offsetHeight;
+                let elHeight = this.$refs.scrollUl.children[0].offsetHeight,
+                    isUp = this.endY > 0;
 
                 this.endY = this.startY - e.changedTouches[0].pageY;
                 this.lastScrollY -= this.endY;
 
-                if (this.isScrollOver(this.lastScrollY, this.endY > 0)) {
-                  return;
+                if(isUp){
+                    this.lastScrollY = Math.ceil(this.lastScrollY / elHeight) * elHeight;
+                }else{
+                    this.lastScrollY = Math.floor(this.lastScrollY / elHeight) * elHeight;
                 }
-                this.lastScrollY = Math.floor(this.lastScrollY / elHeight) * elHeight;
+
+                if (this.isScrollToTop(this.lastScrollY, isUp)) {
+                  this.lastScrollY = 0;
+                }
+                if (this.isScrollToBottom(this.lastScrollY, isUp)) {
+                  this.lastScrollY = -this.maxScrollTop;
+                }
                 e.currentTarget.style.transform = `translateY(${this.lastScrollY}px)`;
                 e.currentTarget.style['transition-duration'] = `.3s`;
             },
-            isScrollOver (scrollValue, up){
-                return (scrollValue > 0 && !up) || (scrollValue < 0 && up)
+            isScrollToTop (scrollValue, up){
+                return scrollValue > 0 && !up
+            },
+            isScrollToBottom (scrollValue, up){
+                return scrollValue < -this.maxScrollTop && up
             }
         },
         computed: {
