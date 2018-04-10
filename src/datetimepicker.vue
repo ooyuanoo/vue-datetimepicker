@@ -4,11 +4,11 @@
             <span v-for="item in pageText.title" v-text="item"></span>
         </div>
         <div class="section-part select clearfix">
-            <item :name="1" :items="yearArr" :cur="curTime.year" v-on:changeSelect="getYearSelected"></item>
-            <item :name="2" :items="monthArr" :cur="curTime.month" v-on:changeSelect="getMonthSelected"></item>
-            <item :name="3" :items="dateArr" :month="curTime.month" :cur="curTime.date" v-on:changeSelect="getDateSelected"></item>
-            <item :name="4" :items="hoursArr" :cur="curTime.hour" v-on:changeSelect="getHourSelected"></item>
-            <item :name="5" :items="minutesArr" :cur="curTime.minute" v-on:changeSelect="getMinuteSelected"></item>
+            <item :name="1" :items="yearArr" :value="curSelectTime.year" v-on:changeSelect="getYearSelected"></item>
+            <item :name="2" :items="monthArr" :value="curSelectTime.month" v-on:changeSelect="getMonthSelected"></item>
+            <item :name="3" :items="dateArr" :value="curSelectTime.date" v-on:changeSelect="getDateSelected"></item>
+            <item :name="4" :items="hoursArr" :value="curSelectTime.hour" v-on:changeSelect="getHourSelected"></item>
+            <item :name="5" :items="minutesArr" :value="curSelectTime.minute" v-on:changeSelect="getMinuteSelected"></item>
         </div>
         <div class="section-part footer clearfix">
             <button type="button" class="btn btn-clear" v-text="pageText.btn[0]" @click="selectTimeClick($event, true)"></button>
@@ -22,7 +22,7 @@
     import item from './item.vue'
 
     export default {
-        props: ['langType', 'isDateSelect'],
+        props: ['langType', 'isDateSelect', 'value'],
         name: 'dateTimePicker',
         components: {
             item
@@ -38,7 +38,6 @@
                 startY: '',
                 endY: 0,
                 lastScrollY: 0,
-                curTime: {},
                 curSelectTime: {},
                 date: ''
             }
@@ -49,7 +48,13 @@
             this.dateArr = this.initData(1, 30);
             this.hoursArr = this.initData(0, 23, true);
             this.minutesArr = this.initData(0, 59, true);
-            this.curTime = this.initDate();
+
+            if(!this.value){
+                this.curSelectTime = this.initDate()
+            }else{
+                this.curSelectTime = this.initDate(this.value);
+            }
+            this.setMonthDay();
         },
         mounted (){
             document.documentElement.style.overflow = 'hidden';
@@ -68,8 +73,8 @@
 
                 return temp;
             },
-            initDate (){
-                let now = new Date();
+            initDate (date){
+                let now = date ? new Date(date) : new Date();
 
                 return {
                     year: now.getFullYear(),
@@ -89,7 +94,6 @@
             },
             getDateSelected (val){
                 this.curSelectTime.date = this.dateArr[val];
-                this.setMonthDay();
             },
             getHourSelected (val){
                 this.curSelectTime.hour = this.hoursArr[Number(val)];
@@ -107,18 +111,27 @@
                 }
             },
             setMonthDay (){ //设置年月
-                if(this.curSelectTime && this.curSelectTime.month){
-                    if(this.curSelectTime.month === 2){
-                        if(this.curSelectTime.year % 4 === 0){
-                            this.dateArr = this.initData(1, 29);
-                        }else{
-                            this.dateArr = this.initData(1, 28);
-                        }
-                    }else if((this.curSelectTime.month <= 7 && this.curSelectTime.month % 2) ||
-                        (this.curSelectTime.month > 7 && this.curSelectTime.month % 2)){
-                        this.dateArr = this.initData(1, 31);
-                    }else{
-                        this.dateArr = this.initData(1, 30);
+                if(this.curSelectTime.month === 2){
+                  if(this.curSelectTime.year % 4 === 0 &&
+                    (this.curSelectTime.year % 100 !== 0 ||
+                      this.curSelectTime.year % 400 === 0)){
+                      this.dateArr = this.initData(1, 29);
+                  }else{
+                      this.dateArr = this.initData(1, 28);
+                  }
+                }else if([4,6,9,11].indexOf(this.curSelectTime.month) > -1){
+                    this.dateArr = this.initData(1, 30);
+                }else{
+                    this.dateArr = this.initData(1, 31);
+                }
+
+                if(this.curSelectTime.month === 2){
+                    if(this.curSelectTime.date > 28){
+                        this.curSelectTime.date = 28
+                    }
+                }else if([4,6,9,11].indexOf(this.curSelectTime.month) > -1){
+                    if(this.curSelectTime.date > 30){
+                      this.curSelectTime.date = 30
                     }
                 }
             }
@@ -170,6 +183,8 @@
             height 50px
             line-height 50px
             background #fff
+            border none
+            outline none
 
     .clearfix:after
         content: ".";

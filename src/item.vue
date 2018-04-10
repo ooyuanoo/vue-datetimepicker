@@ -13,7 +13,7 @@
     export default {
         props: {
             items: Array,
-            cur: '',
+            value: '',
             name: Number,
             month: ''
         },
@@ -29,10 +29,8 @@
             }
         },
         watch: {
-            'month': {
-                handler: (val, old) => {
-                    console.log(val)
-                }
+            value(val, old){
+                this.initNow();
             }
         },
         computed: {
@@ -41,9 +39,9 @@
 
                 if(!this.lastScrollY){
                     index = 1
-                }else if(this.lastScrollY === 50){
+                }else if(this.lastScrollY === this.liHeight){
                     index = 0;
-                }else if(this.lastScrollY + 50 === this.maxScrollTop){
+                }else if(this.lastScrollY + this.liHeight === this.maxScrollTop){
                     index = Math.abs(this.lastScrollY / this.liHeight)
                 }else{
                     index = Math.abs(this.lastScrollY / this.liHeight) + 1
@@ -59,10 +57,10 @@
         },
         methods: {
             initNow (){
-                if(- (this.items.indexOf(this.cur) - 1) >= 0){
+                if(- (this.items.indexOf(this.value) - 1) >= 0){
                     this.lastScrollY = 0
                 }else{
-                    this.lastScrollY = - (this.items.indexOf(this.cur) - 1) * this.liHeight;
+                    this.lastScrollY = - (this.items.indexOf(this.value) - 1) * this.liHeight;
                 }
 
                 this.transformScroll(this.$refs.scrollUl, 0, this.lastScrollY)
@@ -172,6 +170,7 @@
             padding 0
             transition-timing-function: cubic-bezier(0.1, 0.57, 0.1, 1);
             transition-duration: 0ms;
+            margin 0
         li
             line-height 50px
             list-style none
