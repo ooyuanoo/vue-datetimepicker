@@ -3,7 +3,7 @@
  */
 export const lang = {
     'en': {
-        title: ['Year', 'Month', 'Day', 'Hour', 'Minute'],
+        title: ['Year', 'Month', 'Date', 'Hours', 'Minutes'],
         btn: ['clear', 'ok']
     },
     'cn': {

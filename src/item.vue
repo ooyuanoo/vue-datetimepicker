@@ -1,30 +1,77 @@
 <template>
-    <div class="scroll-part">
+    <div class="scroll-part" :class="['date-scroll-part-' + name]">
         <ul @touchstart="startSelect($event, 0)" @touchmove="moveSelect($event, 0)"  @touchend="endSelect($event, 0)" ref="scrollUl">
-            <li v-for="item in items">
+            <li v-for="item, index in items" :class="{'active': index === selectedIndex}">
                 <span v-text="item"></span>
             </li>
         </ul>
+        <div class="box-line"></div>
     </div>
 </template>
 
 <script>
     export default {
         props: {
-            items: Array
+            items: Array,
+            cur: '',
+            name: Number,
+            month: ''
         },
         data () {
             return {
                 startY: '',
                 endY: 0,
                 lastScrollY: 0,
-                scrollGap: 0
+                scrollGap: 0,
+                startTime: 0,
+                liHeight: '',
+                maxScrollTop: ''
             }
         },
+        watch: {
+            'month': {
+                handler: (val, old) => {
+                    console.log(val)
+                }
+            }
+        },
+        computed: {
+            selectedIndex () {
+                let index = 0;
+
+                if(!this.lastScrollY){
+                    index = 1
+                }else if(this.lastScrollY === 50){
+                    index = 0;
+                }else if(this.lastScrollY + 50 === this.maxScrollTop){
+                    index = Math.abs(this.lastScrollY / this.liHeight)
+                }else{
+                    index = Math.abs(this.lastScrollY / this.liHeight) + 1
+                }
+
+                return index;
+            }
+        },
+        mounted (){
+            this.liHeight = this.$refs.scrollUl.children[0].offsetHeight;
+            this.maxScrollTop = this.$refs.scrollUl.offsetHeight - this.$el.offsetHeight;
+            this.initNow();
+        },
         methods: {
+            initNow (){
+                if(- (this.items.indexOf(this.cur) - 1) >= 0){
+                    this.lastScrollY = 0
+                }else{
+                    this.lastScrollY = - (this.items.indexOf(this.cur) - 1) * this.liHeight;
+                }
+
+                this.transformScroll(this.$refs.scrollUl, 0, this.lastScrollY)
+            },
             startSelect (e){
                 e.preventDefault();
+                this.maxScrollTop = this.$refs.scrollUl.offsetHeight - this.$el.offsetHeight;
                 this.startY = e.changedTouches[0].pageY;
+                this.startTime = new Date().getTime();
             },
             moveSelect (e){
                 e.preventDefault();
@@ -34,106 +81,80 @@
                     scrollValue = 0,
                     isScrollUp = false;
 
-                if(scrollLength > 0){
+                if(scrollLength > 0){ //往上滑
                     scrollValue = - scrollLength + this.lastScrollY;
                     isScrollUp = true;
-                }else{
+                }else{ //往下滑
                     scrollValue = this.lastScrollY - scrollLength;
                     isScrollUp = false;
                 }
 
+                //滑到顶部
                 if (this.isScrollToTop(scrollValue, isScrollUp)) {
-                  scrollValue = 0;
+                  scrollValue = this.liHeight;
                 }
+
+                //滑到底部
                 if (this.isScrollToBottom(scrollValue, isScrollUp)) {
-                  scrollValue = -this.maxScrollTop;
+                  scrollValue = -this.maxScrollTop - this.liHeight;
                 }
-                e.currentTarget.style.transform = `translateY(${scrollValue}px)`;
-                e.currentTarget.style['transition-duration'] = `0s`;
 
-
-//                let transformValue = 0,
-//                    // 拉动距离
-//                    length = this.startY - e.changedTouches[0].pageY,
-//                    // 手势往上拉
-//                    isScrollUp = length > 0;
-//
-//                console.log(this.startY, length, this.lastScrollY)
-//                // 顶部不能往下拉了
-//                if (this.lastScrollY < 0 && !isScrollUp) {
-//                  this.lastScrollY = 0;
-//                  return;
-//                }
-//
-//               // 底部不能往上拉了
-//                if (this.lastScrollY >= this.maxScrollTop && isScrollUp) {
-//                  transformValue = -this.maxScrollTop;
-//                  return;
-//                }
-//
-//                transformValue = -this.lastScrollY - length;
-//                if (Math.abs(transformValue) > 50) {
-//                  transformValue = Math.floor(transformValue / 50) *  50
-//                } else {
-//                    return;
-//                }
-//                // 容错
-//                if (transformValue > 0) {
-//                  transformValue = 0;
-//                }
-//                if (transformValue < -this.maxScrollTop ) {
-//                  transformValue = -this.maxScrollTop;
-//                }
-//                this.lastScrollY = -transformValue
-////                if(this.lastScrollY >= this.maxScrollTop){
-////                    transformValue = -this.maxScrollTop;
-////                } else {
-////                    if(this.startY - e.changedTouches[0].pageY > 0){
-////                      transformValue = -((this.startY - e.changedTouches[0].pageY) + this.lastScrollY);
-////                    }else{
-////                      transformValue = this.lastScrollY + (this.startY - e.changedTouches[0].pageY);
-////                    }
-////                    this.lastScrollY += this.startY - e.changedTouches[0].pageY
-////                }
-//                e.currentTarget.style.transform = `translateY(${transformValue}px)`;
-//
-//              console.log(this.startY, length, this.lastScrollY)
+                this.transformScroll(e.currentTarget, 0, scrollValue);
             },
             endSelect (e){
                 e.preventDefault();
 
-                let elHeight = this.$refs.scrollUl.children[0].offsetHeight,
-                    isUp = this.endY > 0;
+                let elHeight = this.liHeight,
+                    isUp,
+                    timeGap = new Date().getTime() - this.startTime,
+                    ratio = 1;
 
                 this.endY = this.startY - e.changedTouches[0].pageY;
+                isUp = this.endY > 0;
                 this.lastScrollY -= this.endY;
 
+                //加个速率
+                ratio = this.setRatio(timeGap, this.endY, ratio);
+
                 if(isUp){
-                    this.lastScrollY = Math.ceil(this.lastScrollY / elHeight) * elHeight;
+                    this.lastScrollY = Math.ceil(this.lastScrollY / elHeight) * elHeight - ratio * elHeight;
                 }else{
-                    this.lastScrollY = Math.floor(this.lastScrollY / elHeight) * elHeight;
+                    this.lastScrollY = Math.floor(this.lastScrollY / elHeight) * elHeight + ratio * elHeight;
                 }
 
                 if (this.isScrollToTop(this.lastScrollY, isUp)) {
-                  this.lastScrollY = 0;
+                  this.lastScrollY = this.liHeight;
                 }
+
                 if (this.isScrollToBottom(this.lastScrollY, isUp)) {
-                  this.lastScrollY = -this.maxScrollTop;
+                  this.lastScrollY = -this.maxScrollTop - this.liHeight;
                 }
-                e.currentTarget.style.transform = `translateY(${this.lastScrollY}px)`;
-                e.currentTarget.style['transition-duration'] = `.3s`;
+
+                this.transformScroll(e.currentTarget, .2, this.lastScrollY);
+            },
+            transformScroll (el, duration, scrollValue){
+                el.style.transform = `translateY(${scrollValue}px)`;
+                el.style['transition-duration'] = `${duration}s`;
+
+                this.$emit('changeSelect', this.selectedIndex);
             },
             isScrollToTop (scrollValue, up){
-                return scrollValue > 0 && !up
+                return scrollValue >  this.liHeight && !up
             },
             isScrollToBottom (scrollValue, up){
-                return scrollValue < -this.maxScrollTop && up
+                return scrollValue < -this.maxScrollTop - this.liHeight && up
+            },
+            setRatio (timeGap, endY, ratio){
+                if(endY >= 300){
+                    ratio = 4
+                }else if(endY >= 200){
+                    ratio = 3
+                }else if(endY >= 100){
+                    ratio = 2
+                }
+
+                return ratio
             }
-        },
-        computed: {
-          maxScrollTop() {
-              return this.$refs.scrollUl.offsetHeight - this.$el.offsetHeight + 25;
-          }
         }
     }
 </script>
@@ -145,7 +166,8 @@
         float left
         text-align center
         overflow hidden
-        height 175px
+        height 150px
+        position relative
         ul
             padding 0
             transition-timing-function: cubic-bezier(0.1, 0.57, 0.1, 1);
@@ -153,5 +175,20 @@
         li
             line-height 50px
             list-style none
+            opacity .5
+            font-size 14px
+            &.active
+                opacity 1
+                font-size 16px
 
+    .box-line
+        position absolute
+        z-index -1
+        top 50px
+        height 50px
+        left 10%
+        width 80%
+        border-top 1px solid #00A0E9
+        border-bottom 1px solid #00A0E9
+        box-sizing border-box
 </style>
