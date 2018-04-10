@@ -57,10 +57,12 @@
         },
         methods: {
             initNow (){
-                if(- (this.items.indexOf(this.value) - 1) >= 0){
-                    this.lastScrollY = 0
+                let index = this.items.indexOf(this.value);
+
+                if(index < 1){
+                    this.lastScrollY = this.liHeight
                 }else{
-                    this.lastScrollY = - (this.items.indexOf(this.value) - 1) * this.liHeight;
+                    this.lastScrollY = - (index - 1) * this.liHeight;
                 }
 
                 this.transformScroll(this.$refs.scrollUl, 0, this.lastScrollY)

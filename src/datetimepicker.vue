@@ -22,7 +22,7 @@
     import item from './item.vue'
 
     export default {
-        props: ['langType', 'isDateSelect', 'value'],
+        props: ['langType', 'show', 'value'],
         name: 'dateTimePicker',
         components: {
             item
@@ -35,11 +35,7 @@
                 dateArr: [],
                 hoursArr: [],
                 minutesArr: [],
-                startY: '',
-                endY: 0,
-                lastScrollY: 0,
-                curSelectTime: {},
-                date: ''
+                curSelectTime: {}
             }
         },
         created (){
@@ -102,13 +98,14 @@
                 this.curSelectTime.minute = this.minutesArr[Number(val)];
             },
             selectTimeClick ($event, isClear){
-                this.date = this.curSelectTime.year + '-' + this.curSelectTime.month + '-' + this.curSelectTime.date + ' ' + this.curSelectTime.hour + ':' + this.curSelectTime.minute;
+                let date = this.curSelectTime.year + '-' + this.curSelectTime.month + '-' + this.curSelectTime.date + ' ' + this.curSelectTime.hour + ':' + this.curSelectTime.minute;
 
                 if(isClear){
-                    this.$emit('dateChange', '')
+                    this.$emit('input', '')
                 }else{
-                    this.$emit('dateChange', this.date)
+                    this.$emit('input', date);
                 }
+                this.$emit('update:show', false);
             },
             setMonthDay (){ //设置年月
                 if(this.curSelectTime.month === 2){
