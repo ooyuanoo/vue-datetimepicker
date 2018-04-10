@@ -14,8 +14,7 @@
         props: {
             items: Array,
             value: '',
-            name: Number,
-            month: ''
+            name: Number
         },
         data () {
             return {
@@ -29,9 +28,7 @@
             }
         },
         watch: {
-            value(val, old){
-                this.initNow();
-            }
+            value: 'initNow'
         },
         computed: {
             selectedIndex () {
@@ -136,7 +133,7 @@
                 el.style.transform = `translateY(${scrollValue}px)`;
                 el.style['transition-duration'] = `${duration}s`;
 
-                this.$emit('changeSelect', this.selectedIndex);
+                this.$emit('input', this.items[this.selectedIndex]);
             },
             isScrollToTop (scrollValue, up){
                 return scrollValue >  this.liHeight && !up
