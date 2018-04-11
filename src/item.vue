@@ -130,7 +130,7 @@
                 this.transformScroll(e.currentTarget, .2, this.lastScrollY);
             },
             transformScroll (el, duration, scrollValue){
-                el.style.transform = `translateY(${scrollValue}px)`;
+                el.style.transform = `translateY(${scrollValue}px)  translateZ(0px)`;
                 el.style['transition-duration'] = `${duration}s`;
 
                 this.$emit('input', this.items[this.selectedIndex]);
@@ -178,6 +178,9 @@
             &.active
                 opacity 1
                 font-size 16px
+            span
+                text-align center
+                color #000
 
     .box-line
         position absolute
